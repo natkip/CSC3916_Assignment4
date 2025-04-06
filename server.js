@@ -86,7 +86,64 @@ router.post('/signin', function (req, res) {
         })
     })
 });
-
+//POST: Creates a new movie
+router.post('/movies', authJwtController.isAuthenticated, async (req, res) => {
+    const { title, releaseDate, genre, actors } = req.body;
+    if (!title || !releaseDate || !genre || !actors) {
+      return res.status(400).json({ success: false, msg: 'Missing movie information.' });
+    }
+    try {
+      const movie = new Movie({ title, releaseDate, genre, actors });
+      await movie.save();
+      res.status(201).json({ success: true, msg: 'Movie created successfully. '});
+    } catch (err) {
+      res.status(500).json({ success: false, msg: 'Error creating movie.' });
+    }
+  });
+  
+  //GET: Retrieves all movies
+  router.get('/movies', authJwtController.isAuthenticated, async (req, res) => {
+    try {
+      const movies = await Movie.find({});
+      res.json({ success: true, movies });
+    } catch (err) {
+      res.status(500).json({ success: false, msg: 'Error fetching movies.' });
+    }
+  });
+  
+  //GET: Retrieve a specific movie by title
+  router.get('/movies/:title', authJwtController.isAuthenticated, async (req, res) => {
+    try {
+      const movie = await Movie.findOne({ title: req.parans.title });
+      if (!movie) return res.status(404).json({ success: false, msg: 'Movie not found.' });
+      res.json({ success: true, movie });
+    } catch (err) {
+      res.status(500).json({ success: false, msg: 'Error retrieving movie.' });
+    }
+  });
+  
+  //PUT: Update a specific movie by title
+  router.put('/movies/:title', authJwtController.isAuthenticated, async (req, res) => {
+    try {
+      const updatedMovie = await Movie.findOneAndUpdate({ title: req.params.title }, req.body, { new: true });
+      if ( !updatedMovie) return res.status(404).json({ success: false, msg: 'Movie not found. '});
+      res.json({ success: true, msg: 'Movie updated successfully.', updatedMovie });
+    } catch (err) {
+      res.status(500).json({ success: false, msg: 'Error updating movie.' });
+    }
+  });
+  
+  //DELETE: Deletes a specific movie by title
+  router.delete('/movies/:title', authJwtController.isAuthenticated, async (req, res) => {
+    try {
+      const deletedMovie = await Movie.findOneAndDelete({ title: req.params.title });
+      if (!deletedMovie) return res.status(404).json({ success: false, msg: 'Movie not found. '});
+      res.json({ success: true, msg: 'Movie deleted successfully. '});
+    } catch (err) {
+      res.status(500).json({ success: false, msg: 'Error deleting movie.' });
+    }
+  });
+  
 app.use('/', router);
 app.listen(process.env.PORT || 8080);
 module.exports = app; // for testing only
