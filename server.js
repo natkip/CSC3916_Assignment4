@@ -143,6 +143,47 @@ router.post('/movies', authJwtController.isAuthenticated, async (req, res) => {
       res.status(500).json({ success: false, msg: 'Error deleting movie.' });
     }
   });
+
+  //Creates a new review POST
+  router.post('/reviews', authJwtController.isAuthenticated, function (req, res) {
+    var review = new Review ({
+      movieId: req.body.movieId,
+      username: req.body.username,
+      review: req.body.review,
+      rating: req.body.rating
+    });
+
+    review.save(function(err) {
+      if (err) {
+        res.status(500).json({ success: false, message: 'Failed to create review' });
+      } else {
+        res.status(200).json({ message: 'Review created!' });
+      }
+    });
+  });
+
+  router.get('/movies', function (req, res) {
+    if (req.query.reviews === 'true') {
+      Movie.aggregate([
+        {
+          $lookup: {
+            from: "reviews",
+            localField: "_id",
+            foreignField: "movieId",
+            as: "reviews"
+          }
+        }
+      ]).exec(function (err, movies) {
+        if (err) res.status(500).json({ success: false, message: err });
+        else res.status(200).json(movies);
+      });
+    } else {
+      Movie.find({}, function (err, movies) {
+        if (err) res.status(500).json({ success: false, message: err });
+        else res.status(200).json(movies);
+      });
+    }
+  });
   
 app.use('/', router);
 app.listen(process.env.PORT || 8080);
