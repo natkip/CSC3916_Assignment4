@@ -24,6 +24,41 @@ app.use(passport.initialize());
 
 var router = express.Router();
 
+const crypto = require("crypto");
+const rp = require("request-promise");
+const GA_TRACKING_ID = process.env.GA_KEY;
+
+function trackEvent(category, action, label,value, dimension, metric) {
+  const options = {
+    method: 'POST',
+    url: 'http://csc3916-assignment4-k2aa.onrender.com' + GA_TRACKING_ID + '&api_secret=' + process.env.GA_SECRET,
+    json: {
+      client_id: crypto.randomBytes(16).toString("hex"),
+      events: [{
+        name: 'movie_review',
+        params: {
+          event_category: category,
+          event_action: action,
+          event_label: label,
+          value: value,
+          dimension1: dimension,
+          metric1: metric
+        }
+      }]
+    },
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  };
+  return rp(options)
+    .then(response=> {
+      console.log("Event tracked:", response);
+    })
+    .catch(err => {
+      console.error("Error tracking the event:", err.message);
+    });
+}
+
 function getJSONObjectForMovieRequirement(req) {
     var json = {
         headers: "No headers",
@@ -184,7 +219,10 @@ router.post('/movies', authJwtController.isAuthenticated, async (req, res) => {
       });
     }
   });
-  
+
+  router.get('/', function (req, res) {
+    res.status(200).send('Server is running!');
+  });
 app.use('/', router);
 app.listen(process.env.PORT || 8080);
 module.exports = app; // for testing only
