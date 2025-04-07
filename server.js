@@ -197,6 +197,18 @@ router.post('/movies', authJwtController.isAuthenticated, async (req, res) => {
     });
   });
 
+  //Creates a new review GET
+  router.get('/reviews', authJwtController.isAuthenticated, async (req, res) => {
+    try {
+      const reviews = await Review.find({});
+      if (!reviews || reviews.length === 0) {
+        return res.status(404).json({ success: false, msg: 'No reviews found.'});
+      }
+      res.status(200).json({ success: true, reviews});
+    } catch (err) {
+      res.status(500).json({ success: false, msg: 'Error fetching movie reviews.', error: err.message });
+    }
+  });
   router.get('/movies', function (req, res) {
     if (req.query.reviews === 'true') {
       Movie.aggregate([
